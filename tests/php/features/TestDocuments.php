@@ -258,4 +258,99 @@ class TestDocuments extends BaseTestCase {
 		$this->assertTrue( $query->elasticsearch_success );
 		$this->assertEquals( 1, $query->post_count );
 	}
+
+	/**
+	 * Test the `get_allowed_ingest_mime_types` method.
+	 *
+	 * @since 5.1.0
+	 * @group documents
+	 */
+	public function test_get_allowed_ingest_mime_types() {
+		$feature = ElasticPress\Features::factory()->get_registered_feature( 'documents' );
+
+		$expected = [
+			'pdf'  => 'application/pdf',
+			'ppt'  => 'application/vnd.ms-powerpoint',
+			'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+			'xls'  => 'application/vnd.ms-excel',
+			'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'doc'  => 'application/msword',
+			'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'csv'  => 'text/csv',
+			'txt'  => 'text/plain',
+		];
+		$this->assertSame( $expected, $feature->get_allowed_ingest_mime_types() );
+	}
+
+
+	/**
+	 * Test the `ep_allowed_documents_ingest_mime_types` filter.
+	 *
+	 * @since 5.1.0
+	 * @group documents
+	 */
+	public function test_ep_allowed_documents_ingest_mime_types_filter() {
+		$feature = ElasticPress\Features::factory()->get_registered_feature( 'documents' );
+
+		$change_filter = function ( $allowed_mime_types ) {
+			$allowed_mime_types['test'] = 'text/test';
+			return $allowed_mime_types;
+		};
+		add_filter( 'ep_allowed_documents_ingest_mime_types', $change_filter );
+
+		$this->assertSame( 'text/test', $feature->get_allowed_ingest_mime_types()['test'] );
+	}
+
+	/**
+	 * Depending on the WP_Query post_type parameter, attachments should be added by default.
+	 *
+	 * @since 5.1.0
+	 * @group documents
+	 */
+	public function test_empty_post_type() {
+		ElasticPress\Features::factory()->activate_feature( 'search' );
+		ElasticPress\Features::factory()->activate_feature( 'documents' );
+		ElasticPress\Features::factory()->setup_features();
+
+		$this->ep_factory->post->create(
+			array(
+				'post_title' => 'findme',
+				'post_type'  => 'post',
+			)
+		);
+		$this->ep_factory->post->create(
+			array(
+				'post_title'     => 'findme',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'application/msword',
+			)
+		);
+
+		ElasticPress\Elasticsearch::factory()->refresh_indices();
+
+		// No post type, attachment added by default
+		$query = new \WP_Query( [ 's' => 'findme' ] );
+		$this->assertTrue( $query->elasticsearch_success );
+		$this->assertEquals( 2, $query->post_count );
+
+		// Post type as string, attachment not added by default
+		$query = new \WP_Query(
+			[
+				'post_type' => 'post',
+				's'         => 'findme',
+			]
+		);
+		$this->assertTrue( $query->elasticsearch_success );
+		$this->assertEquals( 1, $query->post_count );
+
+		// Post type as array, attachment not added by default
+		$query = new \WP_Query(
+			[
+				'post_type' => [ 'post' ],
+				's'         => 'findme',
+			]
+		);
+		$this->assertTrue( $query->elasticsearch_success );
+		$this->assertEquals( 1, $query->post_count );
+	}
 }
