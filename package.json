@@ -1,6 +1,6 @@
 {
   "name": "elasticpress",
-  "version": "5.0.2",
+  "version": "5.1.0",
   "license": "GPL-2.0-or-later",
   "description": "A fast and flexible search and query engine for WordPress.",
   "devDependencies": {
@@ -35,7 +35,7 @@
     "lint-style": "10up-toolkit lint-style",
     "env": "wp-env",
     "env:install-tests-cli": "./bin/install-wp-cli.sh tests-wordpress",
-    "env:start": "wp-env start && npm run env:install-tests-cli && cd bin/es-docker/ && docker-compose up -d",
+    "env:start": "wp-env start && npm run env:install-tests-cli && cd bin/es-docker/ && docker-compose build --build-arg ES_VERSION=${ES_VERSION-7.10.2} && docker-compose up -d",
     "env:stop": "wp-env stop && cd bin/es-docker/ && docker-compose down",
     "env:reset": "wp-env clean all && npm run env:start && npm run cypress:setup",
     "cypress:setup": "./bin/setup-cypress-env.sh",
@@ -49,7 +49,7 @@
   },
   "engineStrict": true,
   "engines": {
-    "node": ">=14",
+    "node": ">=18",
     "npm": ">=8"
   },
   "10up-toolkit": {
