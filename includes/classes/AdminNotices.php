@@ -116,12 +116,6 @@ class AdminNotices {
 			return false;
 		}
 
-		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
-			$url = admin_url( 'network/admin.php?page=elasticpress&do_sync' );
-		} else {
-			$url = admin_url( 'admin.php?page=elasticpress&do_sync' );
-		}
-
 		return [
 			'html'    => sprintf( esc_html__( 'Autosuggest feature is enabled. If documents feature is enabled, your media will also become searchable in the frontend.', 'elasticpress' ) ),
 			'type'    => 'info',
@@ -177,7 +171,7 @@ class AdminNotices {
 			return false;
 		}
 
-		if ( isset( $_GET['do_sync'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		if ( Utils\isset_do_sync_parameter() ) {
 			return false;
 		}
 
@@ -252,7 +246,7 @@ class AdminNotices {
 			return false;
 		}
 
-		if ( isset( $_GET['do_sync'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		if ( Utils\isset_do_sync_parameter() ) {
 			return false;
 		}
 
@@ -316,7 +310,7 @@ class AdminNotices {
 			return false;
 		}
 
-		if ( isset( $_GET['do_sync'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		if ( Utils\isset_do_sync_parameter() ) {
 			return false;
 		}
 
@@ -595,10 +589,17 @@ class AdminNotices {
 			$response_error = get_transient( 'ep_es_info_response_error' );
 		}
 
+		$retry_url = add_query_arg(
+			[
+				'ep-retry'       => 1,
+				'ep_retry_nonce' => wp_create_nonce( 'ep_retry_nonce' ),
+			]
+		);
+
 		$html = sprintf(
 			/* translators: 1. Current URL with retry parameter; 2. Settings Page URL */
 			__( 'There is a problem with connecting to your Elasticsearch host. ElasticPress can <a href="%1$s">try your host again</a>, or you may need to <a href="%2$s">change your settings</a>.', 'elasticpress' ),
-			esc_url( add_query_arg( 'ep-retry', 1 ) ),
+			esc_url( $retry_url ),
 			esc_url( $url )
 		);
 
